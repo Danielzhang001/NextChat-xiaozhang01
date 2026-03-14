@@ -1,0 +1,204 @@
+<!DOCTYPE html>
+<html lang="zh-CN">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>欧姆定律 I = U/R - 电流与电压关系</title>
+    <script src="https://cdn.tailwindcss.com"></script>
+    <script src="https://cdnjs.cloudflare.com/ajax/libs/three.js/r134/three.min.js"></script>
+    <link rel="stylesheet" href="https://cdn.jsdelivr.net/npm/katex@0.16.11/dist/katex.min.css">
+    <script src="https://cdn.jsdelivr.net/npm/katex@0.16.11/dist/katex.min.js"></script>
+    <style>
+        :root { --bg-gradient: linear-gradient(180deg, #0F172A 0%, #1e3a5f 50%, #0c4a6e 100%); --nav-bg: rgba(15, 23, 42, 0.95); --primary: #3B82F6; --accent: #60A5FA; }
+        * { margin: 0; padding: 0; box-sizing: border-box; }
+        body { font-family: system-ui, sans-serif; background: var(--bg-gradient); color: #F8FAFC; min-height: 100vh; }
+        nav { position: fixed; top: 0; left: 0; right: 0; background: var(--nav-bg); border-bottom: 1px solid rgba(59, 130, 246, 0.3); padding: 1rem 2rem; z-index: 100; }
+        .nav-title { font-size: 1.5rem; font-weight: 700; background: linear-gradient(135deg, #3B82F6, #60A5FA); -webkit-background-clip: text; -webkit-text-fill-color: transparent; }
+        #main-container { display: flex; margin-top: 70px; min-height: calc(100vh - 70px); }
+        #sidebar { width: 300px; background: rgba(15, 23, 42, 0.9); padding: 1.5rem; overflow-y: auto; border-right: 1px solid rgba(59, 130, 246, 0.2); }
+        #canvas-container { flex: 1; position: relative; }
+        #controls { position: absolute; bottom: 20px; left: 50%; transform: translateX(-50%); background: rgba(30, 58, 95, 0.8); backdrop-filter: blur(10px); border: 1px solid rgba(59, 130, 246, 0.3); border-radius: 16px; padding: 1.5rem; display: flex; gap: 2rem; }
+        .control-group { text-align: center; }
+        .control-group label { display: block; margin-bottom: 0.5rem; color: #CBD5E1; }
+        .control-group input[type="range"] { width: 140px; height: 6px; -webkit-appearance: none; background: rgba(255,255,255,0.2); border-radius: 3px; }
+        .control-group input[type="range"]::-webkit-slider-thumb { -webkit-appearance: none; width: 18px; height: 18px; background: linear-gradient(135deg, #3B82F6, #60A5FA); border-radius: 50%; cursor: pointer; }
+        .value-display { font-size: 1.4rem; font-weight: 700; color: #60A5FA; margin-top: 0.5rem; font-family: monospace; }
+        .sidebar-section { margin-bottom: 1.5rem; }
+        .sidebar-title { font-size: 1.1rem; font-weight: 600; color: #3B82F6; margin-bottom: 0.75rem; }
+        .sidebar-content { color: #CBD5E1; line-height: 1.6; font-size: 0.95rem; }
+        .formula-box { background: rgba(59, 130, 246, 0.15); border: 1px solid rgba(59, 130, 246, 0.3); border-radius: 8px; padding: 1rem; text-align: center; margin: 1rem 0; }
+        .circuit-diagram { background: rgba(255,255,255,0.05); border-radius: 8px; padding: 1rem; margin-top: 1rem; }
+        .electron { position: absolute; width: 8px; height: 8px; background: #60A5FA; border-radius: 50%; box-shadow: 0 0 10px #60A5FA; }
+        .meter { background: rgba(0,0,0,0.3); border: 2px solid #3B82F6; border-radius: 8px; padding: 0.5rem; text-align: center; min-width: 100px; }
+        .meter-value { font-size: 1.2rem; font-weight: 700; color: #60A5FA; font-family: monospace; }
+    </style>
+</head>
+<body>
+    <nav><div class="nav-title">⚡ 欧姆定律 I = U / R</div></nav>
+    <div id="main-container">
+        <div id="sidebar">
+            <div class="sidebar-section">
+                <div class="sidebar-title">🎯 学习目标</div>
+                <div class="sidebar-content">
+                    <div>• 理解欧姆定律的公式和含义</div>
+                    <div>• 掌握电流、电压、电阻的关系</div>
+                    <div>• 能运用欧姆定律进行简单计算</div>
+                </div>
+            </div>
+            <div class="sidebar-section">
+                <div class="sidebar-title">📐 核心公式</div>
+                <div class="formula-box"><span style="font-size: 1.6rem;">$$I = \frac{U}{R}$$</span></div>
+                <div class="sidebar-content" style="font-size: 0.85rem;">
+                    <strong>I</strong> = 电流 (安培 A)<br>
+                    <strong>U</strong> = 电压 (伏特 V)<br>
+                    <strong>R</strong> = 电阻 (欧姆 Ω)
+                </div>
+            </div>
+            <div class="sidebar-section">
+                <div class="sidebar-title">💡 原理解析</div>
+                <div class="sidebar-content">
+                    <p><strong>欧姆定律</strong>：导体中的电流，跟导体两端的电压成正比，跟导体的电阻成反比。</p>
+                    <div class="circuit-diagram">
+                        <div style="text-align:center;color:#94A3B8;font-size:0.85rem;">
+                            🔋 电源 → 📊 电流表 → 💡 灯泡 → 📈 电压表
+                        </div>
+                    </div>
+                </div>
+            </div>
+            <div class="sidebar-section">
+                <div class="sidebar-title">🌊 形象比喻</div>
+                <div class="sidebar-content" style="font-size: 0.85rem;">
+                    <div>💧 <strong>水流类比</strong>：</div>
+                    <div>• 电压 = 水压（推动力）</div>
+                    <div>• 电流 = 水流（流动的水）</div>
+                    <div>• 电阻 = 水管粗细（阻碍）</div>
+                </div>
+            </div>
+        </div>
+        <div id="canvas-container">
+            <div class="meter" style="position:absolute;top:20px;right:20px;">
+                <div style="color:#94A3B8;font-size:0.8rem;">电流表</div>
+                <div class="meter-value"><span id="currentMeter">0.50</span> A</div>
+            </div>
+            <div class="meter" style="position:absolute;top:20px;right:140px;">
+                <div style="color:#94A3B8;font-size:0.8rem;">电压表</div>
+                <div class="meter-value"><span id="voltageMeter">5.0</span> V</div>
+            </div>
+        </div>
+        <div id="controls">
+            <div class="control-group">
+                <label>🔋 电压 U (V)</label>
+                <input type="range" id="voltage" min="1" max="12" value="5" step="0.5">
+                <div class="value-display"><span id="voltageValue">5.0</span> V</div>
+            </div>
+            <div class="control-group">
+                <label>💡 电阻 R (Ω)</label>
+                <input type="range" id="resistance" min="1" max="20" value="10">
+                <div class="value-display"><span id="resistanceValue">10</span> Ω</div>
+            </div>
+            <div class="control-group">
+                <label>⚡ 电流 I (A)</label>
+                <div class="value-display"><span id="currentValue">0.50</span></div>
+            </div>
+        </div>
+    </div>
+    <script>
+        const scene = new THREE.Scene();
+        const camera = new THREE.PerspectiveCamera(60, window.innerWidth / window.innerHeight, 0.1, 1000);
+        const renderer = new THREE.WebGLRenderer({ antialias: true, alpha: true });
+        renderer.setSize(document.getElementById('canvas-container').clientWidth, document.getElementById('canvas-container').clientHeight);
+        document.getElementById('canvas-container').appendChild(renderer.domElement);
+        
+        const ambientLight = new THREE.HemisphereLight(0xffffff, 0x444444, 0.6);
+        scene.add(ambientLight);
+        const directionalLight = new THREE.DirectionalLight(0xffffff, 0.8);
+        directionalLight.position.set(5, 10, 7);
+        scene.add(directionalLight);
+        
+        const groundGeometry = new THREE.PlaneGeometry(20, 20);
+        const groundMaterial = new THREE.MeshStandardMaterial({ color: 0x1e293b, roughness: 0.9 });
+        const ground = new THREE.Mesh(groundGeometry, groundMaterial);
+        ground.rotation.x = -Math.PI / 2;
+        scene.add(ground);
+        
+        // 电池
+        const batteryGroup = new THREE.Group();
+        const batteryBody = new THREE.Mesh(new THREE.CylinderGeometry(0.5, 0.5, 2, 16), new THREE.MeshStandardMaterial({ color: 0x1e40af, roughness: 0.5, metalness: 0.5 }));
+        const batteryTop = new THREE.Mesh(new THREE.CylinderGeometry(0.3, 0.3, 0.3, 16), new THREE.MeshStandardMaterial({ color: 0xfbbf24 }));
+        batteryTop.position.y = 1.15;
+        batteryGroup.add(batteryBody, batteryTop);
+        batteryGroup.position.set(-4, 1, 0);
+        scene.add(batteryGroup);
+        
+        // 电阻/灯泡
+        const resistorGroup = new THREE.Group();
+        const resistorBody = new THREE.Mesh(new THREE.SphereGeometry(0.8, 16, 16), new THREE.MeshStandardMaterial({ color: 0xf59e0b, roughness: 0.3, metalness: 0.7, emissive: 0xf59e0b, emissiveIntensity: 0.3 }));
+        resistorGroup.add(resistorBody);
+        resistorGroup.position.set(4, 0.8, 0);
+        scene.add(resistorGroup);
+        
+        // 导线
+        const wireMaterial = new THREE.LineBasicMaterial({ color: 0x60A5FA });
+        const wirePoints = [new THREE.Vector3(-4, 0, 0), new THREE.Vector3(4, 0, 0)];
+        const wireGeometry = new THREE.BufferGeometry().setFromPoints(wirePoints);
+        const wire = new THREE.Line(wireGeometry, wireMaterial);
+        scene.add(wire);
+        
+        // 电子粒子
+        const electrons = [];
+        const electronCount = 20;
+        const electronGeometry = new THREE.SphereGeometry(0.1, 8, 8);
+        const electronMaterial = new THREE.MeshStandardMaterial({ color: 0x60A5FA, emissive: 0x60A5FA, emissiveIntensity: 0.5 });
+        
+        for (let i = 0; i < electronCount; i++) {
+            const electron = new THREE.Mesh(electronGeometry, electronMaterial);
+            electron.position.set(-4 + (i / electronCount) * 8, 0.3, 0);
+            scene.add(electron);
+            electrons.push({ mesh: electron, offset: i / electronCount });
+        }
+        
+        camera.position.set(0, 6, 8);
+        camera.lookAt(0, 0, 0);
+        
+        function update() {
+            const voltage = parseFloat(document.getElementById('voltage').value);
+            const resistance = parseFloat(document.getElementById('resistance').value);
+            const current = voltage / resistance;
+            
+            document.getElementById('voltageValue').textContent = voltage.toFixed(1);
+            document.getElementById('resistanceValue').textContent = resistance;
+            document.getElementById('currentValue').textContent = current.toFixed(2);
+            document.getElementById('voltageMeter').textContent = voltage.toFixed(1);
+            document.getElementById('currentMeter').textContent = current.toFixed(2);
+            
+            // 灯泡亮度
+            const brightness = Math.min(current / 1.2, 1);
+            resistorBody.material.emissiveIntensity = brightness * 0.8;
+            resistorBody.material.color.setHSL(0.1, 1, 0.5 + brightness * 0.3);
+            
+            // 电子运动速度
+            const speed = current * 0.05;
+            electrons.forEach((e, i) => {
+                e.offset += speed * 0.016;
+                if (e.offset > 1) e.offset = 0;
+                e.mesh.position.x = -4 + e.offset * 8;
+            });
+            
+            renderer.render(scene, camera);
+            requestAnimationFrame(update);
+        }
+        
+        document.getElementById('voltage').addEventListener('input', update);
+        document.getElementById('resistance').addEventListener('input', update);
+        
+        renderMathInElement(document.body, { delimiters: [{left: '$$', right: '$$', display: true}] });
+        update();
+        
+        window.addEventListener('resize', () => {
+            camera.aspect = document.getElementById('canvas-container').clientWidth / document.getElementById('canvas-container').clientHeight;
+            camera.updateProjectionMatrix();
+            renderer.setSize(document.getElementById('canvas-container').clientWidth, document.getElementById('canvas-container').clientHeight);
+        });
+    </script>
+</body>
+</html>
