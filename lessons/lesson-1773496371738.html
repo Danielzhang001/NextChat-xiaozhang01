@@ -1,0 +1,422 @@
+<!DOCTYPE html>
+<html lang="zh-CN">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>牛顿第二定律 F = ma - 交互式演示</title>
+    <script src="https://cdn.tailwindcss.com"></script>
+    <script src="https://cdnjs.cloudflare.com/ajax/libs/three.js/r134/three.min.js"></script>
+    <link rel="stylesheet" href="https://cdn.jsdelivr.net/npm/katex@0.16.11/dist/katex.min.css">
+    <script src="https://cdn.jsdelivr.net/npm/katex@0.16.11/dist/katex.min.js"></script>
+    <style>
+        :root {
+            --bg-gradient: linear-gradient(180deg, #0F172A 0%, #164E63 50%, #155E75 100%);
+            --nav-bg: rgba(15, 23, 42, 0.95);
+            --nav-border: rgba(20, 184, 166, 0.3);
+            --panel-bg: rgba(22, 78, 99, 0.7);
+            --primary: #14B8A6;
+            --accent: #22D3EE;
+        }
+        * { margin: 0; padding: 0; box-sizing: border-box; }
+        body { 
+            font-family: 'Inter', system-ui, sans-serif; 
+            background: var(--bg-gradient); 
+            color: #F8FAFC;
+            min-height: 100vh;
+            overflow-x: hidden;
+        }
+        nav {
+            position: fixed; top: 0; left: 0; right: 0;
+            background: var(--nav-bg);
+            border-bottom: 1px solid var(--nav-border);
+            padding: 1rem 2rem;
+            z-index: 100;
+            backdrop-filter: blur(10px);
+        }
+        .nav-title { font-size: 1.5rem; font-weight: 700; background: linear-gradient(135deg, #14B8A6, #22D3EE); -webkit-background-clip: text; -webkit-text-fill-color: transparent; }
+        #main-container { display: flex; margin-top: 70px; min-height: calc(100vh - 70px); }
+        #sidebar { 
+            width: 320px; 
+            background: rgba(15, 23, 42, 0.9);
+            padding: 1.5rem;
+            overflow-y: auto;
+            border-right: 1px solid rgba(20, 184, 166, 0.2);
+            flex-shrink: 0;
+        }
+        #canvas-container { flex: 1; position: relative; min-height: 60vh; }
+        #controls {
+            position: absolute;
+            bottom: 20px;
+            left: 50%;
+            transform: translateX(-50%);
+            background: var(--panel-bg);
+            backdrop-filter: blur(10px);
+            border: 1px solid rgba(20, 184, 166, 0.25);
+            border-radius: 16px;
+            padding: 1.5rem;
+            display: flex;
+            gap: 2rem;
+            box-shadow: 0 8px 32px rgba(0,0,0,0.3);
+        }
+        .control-group { text-align: center; }
+        .control-group label { display: block; margin-bottom: 0.5rem; color: #CBD5E1; font-size: 0.9rem; }
+        .control-group input[type="range"] {
+            width: 150px;
+            height: 6px;
+            -webkit-appearance: none;
+            background: rgba(255,255,255,0.2);
+            border-radius: 3px;
+            outline: none;
+        }
+        .control-group input[type="range"]::-webkit-slider-thumb {
+            -webkit-appearance: none;
+            width: 20px;
+            height: 20px;
+            background: linear-gradient(135deg, #2DD4BF, #22D3EE);
+            border-radius: 50%;
+            cursor: pointer;
+            box-shadow: 0 2px 8px rgba(34, 211, 238, 0.4);
+        }
+        .value-display { 
+            font-size: 1.5rem; 
+            font-weight: 700; 
+            color: #22D3EE; 
+            margin-top: 0.5rem;
+            font-family: 'Courier New', monospace;
+        }
+        .sidebar-section { margin-bottom: 1.5rem; }
+        .sidebar-title { font-size: 1.1rem; font-weight: 600; color: #2DD4BF; margin-bottom: 0.75rem; display: flex; align-items: center; gap: 0.5rem; }
+        .sidebar-content { color: #CBD5E1; line-height: 1.6; font-size: 0.95rem; }
+        .formula-box { 
+            background: rgba(20, 184, 166, 0.1); 
+            border: 1px solid rgba(20, 184, 166, 0.3);
+            border-radius: 8px;
+            padding: 1rem;
+            text-align: center;
+            margin: 1rem 0;
+        }
+        .goal-item { display: flex; align-items: flex-start; gap: 0.5rem; margin-bottom: 0.5rem; }
+        .goal-item input[type="checkbox"] { margin-top: 0.25rem; accent-color: #14B8A6; }
+        #quiz-panel {
+            position: fixed;
+            right: 20px;
+            bottom: 20px;
+            width: 340px;
+            max-height: 400px;
+            background: rgba(15, 23, 42, 0.95);
+            border: 1px solid rgba(20, 184, 166, 0.3);
+            border-radius: 16px;
+            overflow: hidden;
+            transition: all 0.3s ease;
+            z-index: 50;
+        }
+        #quiz-panel.collapsed { width: 50px; height: 50px; }
+        .quiz-header {
+            background: linear-gradient(135deg, #14B8A6, #06B6D4);
+            padding: 0.75rem 1rem;
+            display: flex;
+            justify-content: space-between;
+            align-items: center;
+            cursor: pointer;
+        }
+        .quiz-toggle { background: rgba(255,255,255,0.2); border: none; color: white; width: 28px; height: 28px; border-radius: 50%; cursor: pointer; font-size: 1rem; }
+        .quiz-content { padding: 1rem; max-height: 320px; overflow-y: auto; }
+        .quiz-question { margin-bottom: 1rem; }
+        .quiz-options { display: flex; flex-direction: column; gap: 0.5rem; }
+        .quiz-option {
+            background: rgba(255,255,255,0.1);
+            border: 1px solid rgba(255,255,255,0.2);
+            border-radius: 8px;
+            padding: 0.75rem;
+            cursor: pointer;
+            transition: all 0.2s;
+        }
+        .quiz-option:hover { background: rgba(20, 184, 166, 0.2); border-color: #14B8A6; }
+        .quiz-option.correct { background: rgba(34, 197, 94, 0.3); border-color: #22C55E; }
+        .quiz-option.incorrect { background: rgba(239, 68, 68, 0.3); border-color: #EF4444; }
+        .btn {
+            background: linear-gradient(135deg, #14B8A6, #06B6D4);
+            border: none;
+            color: white;
+            padding: 0.5rem 1rem;
+            border-radius: 8px;
+            cursor: pointer;
+            font-weight: 500;
+            transition: all 0.2s;
+        }
+        .btn:hover { transform: translateY(-2px); box-shadow: 0 4px 12px rgba(20, 184, 166, 0.4); }
+        .floating-btn {
+            position: fixed;
+            bottom: 20px;
+            right: 20px;
+            width: 50px;
+            height: 50px;
+            border-radius: 50%;
+            background: linear-gradient(135deg, #14B8A6, #06B6D4);
+            border: none;
+            color: white;
+            font-size: 1.5rem;
+            cursor: pointer;
+            box-shadow: 0 4px 16px rgba(20, 184, 166, 0.4);
+            display: none;
+            z-index: 50;
+        }
+        @media (max-width: 768px) {
+            #main-container { flex-direction: column; }
+            #sidebar { width: 100%; max-height: 300px; }
+            #controls { flex-direction: column; gap: 1rem; bottom: 100px; }
+        }
+    </style>
+</head>
+<body>
+    <nav>
+        <div class="nav-title">🔬 牛顿第二定律 F = ma</div>
+    </nav>
+    
+    <div id="main-container">
+        <div id="sidebar">
+            <div class="sidebar-section">
+                <div class="sidebar-title">🎯 学习目标</div>
+                <div class="sidebar-content">
+                    <div class="goal-item"><input type="checkbox" id="goal1"><label for="goal1">理解力、质量与加速度的关系</label></div>
+                    <div class="goal-item"><input type="checkbox" id="goal2"><label for="goal2">掌握公式 F = ma 的应用</label></div>
+                    <div class="goal-item"><input type="checkbox" id="goal3"><label for="goal3">能够计算加速度、力或质量</label></div>
+                </div>
+            </div>
+            
+            <div class="sidebar-section">
+                <div class="sidebar-title">📐 核心公式</div>
+                <div class="formula-box">
+                    <span style="font-size: 1.8rem;">$$F = ma$$</span>
+                    <div style="margin-top: 0.5rem; font-size: 0.85rem; color: #94A3B8;">
+                        或 $$a = \frac{F}{m}$$
+                    </div>
+                </div>
+                <div class="sidebar-content" style="font-size: 0.85rem;">
+                    <strong>F</strong> = 合力 (牛顿 N)<br>
+                    <strong>m</strong> = 质量 (千克 kg)<br>
+                    <strong>a</strong> = 加速度 (米/秒² m/s²)
+                </div>
+            </div>
+            
+            <div class="sidebar-section">
+                <div class="sidebar-title">💡 原理解析</div>
+                <div class="sidebar-content">
+                    <p style="margin-bottom: 0.75rem;">
+                        <strong>牛顿第二定律</strong>告诉我们：物体的加速度与作用在它上面的合力成正比，与物体的质量成反比。
+                    </p>
+                    <p>
+                        🚗 <strong>生活例子</strong>：推一辆空购物车很容易加速，但装满东西后就难推了——因为质量变大，同样的力产生的加速度变小了！
+                    </p>
+                </div>
+            </div>
+            
+            <div class="sidebar-section">
+                <div class="sidebar-title">🌍 实际应用</div>
+                <div class="sidebar-content" style="font-size: 0.85rem;">
+                    • 汽车发动机设计<br>
+                    • 火箭发射计算<br>
+                    • 运动器材优化<br>
+                    • 安全气囊设计
+                </div>
+            </div>
+        </div>
+        
+        <div id="canvas-container"></div>
+        
+        <div id="controls">
+            <div class="control-group">
+                <label>🔴 力 F (N)</label>
+                <input type="range" id="force" min="1" max="100" value="50">
+                <div class="value-display"><span id="force-value">50</span> N</div>
+            </div>
+            <div class="control-group">
+                <label>🔵 质量 m (kg)</label>
+                <input type="range" id="mass" min="1" max="50" value="10">
+                <div class="value-display"><span id="mass-value">10</span> kg</div>
+            </div>
+            <div class="control-group">
+                <label>🟢 加速度 a (m/s²)</label>
+                <div class="value-display"><span id="accel-value">5.00</span></div>
+            </div>
+        </div>
+    </div>
+    
+    <button class="floating-btn" id="quiz-float" onclick="toggleQuiz()">📝</button>
+    
+    <div id="quiz-panel">
+        <div class="quiz-header" onclick="toggleQuiz()">
+            <span>📝 小测验</span>
+            <button class="quiz-toggle" onclick="event.stopPropagation(); toggleQuiz()">✕</button>
+        </div>
+        <div class="quiz-content">
+            <div class="quiz-question">
+                <p style="margin-bottom: 0.75rem;"><strong>问题：</strong>如果一个 5kg 的物体受到 20N 的力，它的加速度是多少？</p>
+                <div class="quiz-options">
+                    <div class="quiz-option" onclick="checkAnswer(this, false)">A) 0.25 m/s²</div>
+                    <div class="quiz-option" onclick="checkAnswer(this, true)">B) 4 m/s²</div>
+                    <div class="quiz-option" onclick="checkAnswer(this, false)">C) 25 m/s²</div>
+                    <div class="quiz-option" onclick="checkAnswer(this, false)">D) 100 m/s²</div>
+                </div>
+            </div>
+        </div>
+    </div>
+
+    <script>
+        // Three.js 场景设置
+        const scene = new THREE.Scene();
+        const camera = new THREE.PerspectiveCamera(60, window.innerWidth / window.innerHeight, 0.1, 1000);
+        const renderer = new THREE.WebGLRenderer({ antialias: true, alpha: true });
+        renderer.setSize(document.getElementById('canvas-container').clientWidth, document.getElementById('canvas-container').clientHeight);
+        renderer.shadowMap.enabled = true;
+        document.getElementById('canvas-container').appendChild(renderer.domElement);
+        
+        // 添加光源
+        const ambientLight = new THREE.HemisphereLight(0xffffff, 0x444444, 0.6);
+        scene.add(ambientLight);
+        
+        const directionalLight = new THREE.DirectionalLight(0xffffff, 0.8);
+        directionalLight.position.set(5, 10, 7);
+        directionalLight.castShadow = true;
+        scene.add(directionalLight);
+        
+        // 创建地面
+        const groundGeometry = new THREE.PlaneGeometry(20, 20);
+        const groundMaterial = new THREE.MeshStandardMaterial({ 
+            color: 0x1e293b,
+            roughness: 0.8,
+            metalness: 0.2
+        });
+        const ground = new THREE.Mesh(groundGeometry, groundMaterial);
+        ground.rotation.x = -Math.PI / 2;
+        ground.receiveShadow = true;
+        scene.add(ground);
+        
+        // 创建小车（代表物体）
+        const cartGroup = new THREE.Group();
+        
+        // 车身
+        const bodyGeometry = new THREE.BoxGeometry(2, 1, 1.2);
+        const bodyMaterial = new THREE.MeshStandardMaterial({ 
+            color: 0x14B8A6,
+            roughness: 0.3,
+            metalness: 0.7
+        });
+        const body = new THREE.Mesh(bodyGeometry, bodyMaterial);
+        body.castShadow = true;
+        cartGroup.add(body);
+        
+        // 车轮
+        const wheelGeometry = new THREE.CylinderGeometry(0.3, 0.3, 0.2, 16);
+        const wheelMaterial = new THREE.MeshStandardMaterial({ color: 0x475569 });
+        
+        const positions = [
+            [-0.7, -0.5, 0.6], [0.7, -0.5, 0.6],
+            [-0.7, -0.5, -0.6], [0.7, -0.5, -0.6]
+        ];
+        
+        positions.forEach(pos => {
+            const wheel = new THREE.Mesh(wheelGeometry, wheelMaterial);
+            wheel.rotation.z = Math.PI / 2;
+            wheel.position.set(...pos);
+            wheel.castShadow = true;
+            cartGroup.add(wheel);
+        });
+        
+        cartGroup.position.set(-5, 0.5, 0);
+        scene.add(cartGroup);
+        
+        // 力箭头
+        const arrowLength = 2;
+        const arrowHelper = new THREE.ArrowHelper(
+            new THREE.Vector3(1, 0, 0),
+            new THREE.Vector3(0, 0, 0),
+            arrowLength,
+            0xEF4444,
+            0.5,
+            0.3
+        );
+        cartGroup.add(arrowHelper);
+        
+        camera.position.set(0, 5, 8);
+        camera.lookAt(0, 0, 0);
+        
+        // 动画变量
+        let velocity = 0;
+        let position = -5;
+        const trackLength = 15;
+        
+        // 更新函数
+        function update() {
+            const force = parseFloat(document.getElementById('force').value);
+            const mass = parseFloat(document.getElementById('mass').value);
+            const acceleration = force / mass;
+            
+            document.getElementById('force-value').textContent = force;
+            document.getElementById('mass-value').textContent = mass;
+            document.getElementById('accel-value').textContent = acceleration.toFixed(2);
+            
+            // 更新箭头长度
+            arrowHelper.setLength(Math.min(arrowLength * (force / 50), 4));
+            
+            // 物理模拟
+            velocity += acceleration * 0.016;
+            position += velocity * 0.016;
+            
+            // 边界检测
+            if (position > trackLength) {
+                position = -trackLength;
+                velocity = 0;
+            }
+            
+            cartGroup.position.x = position;
+            
+            renderer.render(scene, camera);
+            requestAnimationFrame(update);
+        }
+        
+        // 事件监听
+        document.getElementById('force').addEventListener('input', update);
+        document.getElementById('mass').addEventListener('input', update);
+        
+        // 小测验功能
+        function toggleQuiz() {
+            const panel = document.getElementById('quiz-panel');
+            const floatBtn = document.getElementById('quiz-float');
+            panel.classList.toggle('collapsed');
+            floatBtn.style.display = panel.classList.contains('collapsed') ? 'block' : 'none';
+        }
+        
+        function checkAnswer(element, isCorrect) {
+            const options = element.parentElement.querySelectorAll('.quiz-option');
+            options.forEach(opt => opt.style.pointerEvents = 'none');
+            
+            if (isCorrect) {
+                element.classList.add('correct');
+                element.innerHTML += ' ✅ 正确！a = F/m = 20/5 = 4 m/s²';
+            } else {
+                element.classList.add('incorrect');
+                element.innerHTML += ' ❌';
+            }
+        }
+        
+        // 渲染公式
+        renderMathInElement(document.body, {
+            delimiters: [
+                {left: '$$', right: '$$', display: true},
+                {left: '$', right: '$', display: false}
+            ]
+        });
+        
+        // 启动动画
+        update();
+        
+        // 窗口大小调整
+        window.addEventListener('resize', () => {
+            camera.aspect = document.getElementById('canvas-container').clientWidth / document.getElementById('canvas-container').clientHeight;
+            camera.updateProjectionMatrix();
+            renderer.setSize(document.getElementById('canvas-container').clientWidth, document.getElementById('canvas-container').clientHeight);
+        });
+    </script>
+</body>
+</html>
