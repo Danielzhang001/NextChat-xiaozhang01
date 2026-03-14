@@ -1,0 +1,235 @@
+<!DOCTYPE html>
+<html lang="zh-CN">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>平面镜成像 - 交互式演示</title>
+    <script src="https://cdn.tailwindcss.com"></script>
+    <script src="https://cdnjs.cloudflare.com/ajax/libs/three.js/r134/three.min.js"></script>
+    <link rel="stylesheet" href="https://cdn.jsdelivr.net/npm/katex@0.16.11/dist/katex.min.css">
+    <script src="https://cdn.jsdelivr.net/npm/katex@0.16.11/dist/katex.min.js"></script>
+    <style>
+        :root { --bg-gradient: linear-gradient(180deg, #0F172A 0%, #312e81 50%, #1e1b4b 100%); --nav-bg: rgba(15, 23, 42, 0.95); --primary: #A78BFA; --accent: #C4B5FD; }
+        * { margin: 0; padding: 0; box-sizing: border-box; }
+        body { font-family: system-ui, sans-serif; background: var(--bg-gradient); color: #F8FAFC; min-height: 100vh; }
+        nav { position: fixed; top: 0; left: 0; right: 0; background: var(--nav-bg); border-bottom: 1px solid rgba(167, 139, 250, 0.3); padding: 1rem 2rem; z-index: 100; }
+        .nav-title { font-size: 1.5rem; font-weight: 700; background: linear-gradient(135deg, #A78BFA, #C4B5FD); -webkit-background-clip: text; -webkit-text-fill-color: transparent; }
+        #main-container { display: flex; margin-top: 70px; min-height: calc(100vh - 70px); }
+        #sidebar { width: 300px; background: rgba(15, 23, 42, 0.9); padding: 1.5rem; overflow-y: auto; border-right: 1px solid rgba(167, 139, 250, 0.2); }
+        #canvas-container { flex: 1; position: relative; }
+        #controls { position: absolute; bottom: 20px; left: 50%; transform: translateX(-50%); background: rgba(49, 46, 129, 0.8); backdrop-filter: blur(10px); border: 1px solid rgba(167, 139, 250, 0.3); border-radius: 16px; padding: 1.5rem; display: flex; gap: 2rem; }
+        .control-group { text-align: center; }
+        .control-group label { display: block; margin-bottom: 0.5rem; color: #CBD5E1; }
+        .control-group input[type="range"] { width: 140px; height: 6px; -webkit-appearance: none; background: rgba(255,255,255,0.2); border-radius: 3px; }
+        .control-group input[type="range"]::-webkit-slider-thumb { -webkit-appearance: none; width: 18px; height: 18px; background: linear-gradient(135deg, #A78BFA, #C4B5FD); border-radius: 50%; cursor: pointer; }
+        .value-display { font-size: 1.4rem; font-weight: 700; color: #C4B5FD; margin-top: 0.5rem; font-family: monospace; }
+        .sidebar-section { margin-bottom: 1.5rem; }
+        .sidebar-title { font-size: 1.1rem; font-weight: 600; color: #A78BFA; margin-bottom: 0.75rem; }
+        .sidebar-content { color: #CBD5E1; line-height: 1.6; font-size: 0.95rem; }
+        .formula-box { background: rgba(167, 139, 250, 0.15); border: 1px solid rgba(167, 139, 250, 0.3); border-radius: 8px; padding: 1rem; text-align: center; margin: 1rem 0; }
+        .feature-card { background: rgba(255,255,255,0.08); border-radius: 8px; padding: 0.75rem; margin-bottom: 0.5rem; font-size: 0.85rem; }
+        .info-panel { position: absolute; top: 20px; right: 20px; background: rgba(15,23,42,0.9); border: 2px solid rgba(167,139,250,0.5); border-radius: 12px; padding: 1rem; min-width: 180px; }
+    </style>
+</head>
+<body>
+    <nav><div class="nav-title">🪞 平面镜成像</div></nav>
+    <div id="main-container">
+        <div id="sidebar">
+            <div class="sidebar-section">
+                <div class="sidebar-title">🎯 学习目标</div>
+                <div class="sidebar-content">
+                    <div>• 理解平面镜成像的特点</div>
+                    <div>• 掌握像与物的位置关系</div>
+                    <div>• 能解释平面镜成像原理</div>
+                </div>
+            </div>
+            <div class="sidebar-section">
+                <div class="sidebar-title">💡 成像特点</div>
+                <div class="feature-card">✨ 成正立的虚像</div>
+                <div class="feature-card">📏 像与物大小相等</div>
+                <div class="feature-card">↔️ 像与物到镜面距离相等</div>
+                <div class="feature-card">🔄 像与物关于镜面对称</div>
+                <div class="feature-card">👤 左右相反（镜像）</div>
+            </div>
+            <div class="sidebar-section">
+                <div class="sidebar-title">📐 成像规律</div>
+                <div class="formula-box">
+                    <span style="font-size: 1.2rem;">物距 = 像距</span><br>
+                    <span style="font-size: 0.9rem; color: #94A3B8;">物体到镜面的距离 = 像到镜面的距离</span>
+                </div>
+            </div>
+            <div class="sidebar-section">
+                <div class="sidebar-title">🌍 生活应用</div>
+                <div class="sidebar-content" style="font-size: 0.85rem;">
+                    <div>• 梳妆镜、穿衣镜</div>
+                    <div>• 潜望镜</div>
+                    <div>• 商店防盗镜</div>
+                    <div>• 汽车后视镜</div>
+                </div>
+            </div>
+        </div>
+        <div id="canvas-container">
+            <div class="info-panel">
+                <div style="color: #C4B5FD; font-weight: 600; margin-bottom: 0.5rem;">位置关系</div>
+                <div style="font-size: 0.85rem; color: #94A3B8;">物距：<span id="objectDist" style="color: #A78BFA;">5.0</span> m</div>
+                <div style="font-size: 0.85rem; color: #94A3B8;">像距：<span id="imageDist" style="color: #C4B5FD;">5.0</span> m</div>
+                <div style="margin-top: 0.5rem; padding-top: 0.5rem; border-top: 1px solid rgba(167,139,250,0.3); font-size: 0.85rem; color: #22C55E;">✓ 物距 = 像距</div>
+            </div>
+        </div>
+        <div id="controls">
+            <div class="control-group">
+                <label>📍 物体位置 X</label>
+                <input type="range" id="objectX" min="-8" max="8" value="5" step="0.5">
+                <div class="value-display"><span id="objectXValue">5.0</span> m</div>
+            </div>
+            <div class="control-group">
+                <label>📍 物体高度 Y</label>
+                <input type="range" id="objectY" min="0.5" max="3" value="1.5" step="0.1">
+                <div class="value-display"><span id="objectYValue">1.5</span> m</div>
+            </div>
+            <div class="control-group">
+                <label>🎨 物体颜色</label>
+                <input type="color" id="objectColor" value="#ef4444" style="width: 60px; height: 40px; border: none; cursor: pointer;">
+            </div>
+        </div>
+    </div>
+    <script>
+        const scene = new THREE.Scene();
+        const camera = new THREE.PerspectiveCamera(60, window.innerWidth / window.innerHeight, 0.1, 1000);
+        const renderer = new THREE.WebGLRenderer({ antialias: true, alpha: true });
+        renderer.setSize(document.getElementById('canvas-container').clientWidth, document.getElementById('canvas-container').clientHeight);
+        document.getElementById('canvas-container').appendChild(renderer.domElement);
+        
+        const ambientLight = new THREE.HemisphereLight(0xffffff, 0x444444, 0.6);
+        scene.add(ambientLight);
+        const directionalLight = new THREE.DirectionalLight(0xffffff, 0.8);
+        directionalLight.position.set(5, 10, 7);
+        scene.add(directionalLight);
+        
+        // 地面网格
+        const gridHelper = new THREE.GridHelper(20, 20, 0x4c1d95, 0x312e81);
+        scene.add(gridHelper);
+        
+        // 平面镜（在中心位置）
+        const mirrorGeometry = new THREE.PlaneGeometry(10, 6);
+        const mirrorMaterial = new THREE.MeshStandardMaterial({ 
+            color: 0x6b5b95, 
+            roughness: 0.1, 
+            metalness: 0.9,
+            transparent: true,
+            opacity: 0.5,
+            side: THREE.DoubleSide
+        });
+        const mirror = new THREE.Mesh(mirrorGeometry, mirrorMaterial);
+        mirror.position.y = 3;
+        scene.add(mirror);
+        
+        // 镜面边框
+        const frameGeometry = new THREE.BoxGeometry(10.4, 0.2, 0.2);
+        const frameMaterial = new THREE.MeshStandardMaterial({ color: 0x4c1d95, metalness: 0.8 });
+        const topFrame = new THREE.Mesh(frameGeometry, frameMaterial);
+        topFrame.position.set(0, 6.1, 0);
+        scene.add(topFrame);
+        
+        // 物体（可移动的箭头）
+        const objectGroup = new THREE.Group();
+        const arrowGeometry = new THREE.ConeGeometry(0.3, 1, 8);
+        const arrowMaterial = new THREE.MeshStandardMaterial({ color: 0xef4444, roughness: 0.3, metalness: 0.5 });
+        const arrow = new THREE.Mesh(arrowGeometry, arrowMaterial);
+        objectGroup.add(arrow);
+        const baseGeometry = new THREE.CylinderGeometry(0.4, 0.4, 0.1, 8);
+        const base = new THREE.Mesh(baseGeometry, arrowMaterial);
+        base.position.y = -0.5;
+        objectGroup.add(base);
+        scene.add(objectGroup);
+        
+        // 虚像（半透明，在镜子另一侧）
+        const imageGroup = new THREE.Group();
+        const imageArrowGeometry = new THREE.ConeGeometry(0.3, 1, 8);
+        const imageArrowMaterial = new THREE.MeshStandardMaterial({ color: 0xc4b5fd, roughness: 0.5, metalness: 0.3, transparent: true, opacity: 0.6 });
+        const imageArrow = new THREE.Mesh(imageArrowGeometry, imageArrowMaterial);
+        imageGroup.add(imageArrow);
+        const imageBaseGeometry = new THREE.CylinderGeometry(0.4, 0.4, 0.1, 8);
+        const imageBase = new THREE.Mesh(imageBaseGeometry, imageArrowMaterial);
+        imageBase.position.y = -0.5;
+        imageGroup.add(imageBase);
+        scene.add(imageGroup);
+        
+        // 光线（从物体到镜子到眼睛）
+        const rayMaterial = new THREE.LineDashedMaterial({ color: 0xfbbf24, dashSize: 0.2, gapSize: 0.1, transparent: true, opacity: 0.6 });
+        const rayPoints = [new THREE.Vector3(0, 0, 0), new THREE.Vector3(0, 0, 0)];
+        const rayGeometry = new THREE.BufferGeometry().setFromPoints(rayPoints);
+        const rayLine = new THREE.Line(rayGeometry, rayMaterial);
+        rayLine.computeLineDistances();
+        scene.add(rayLine);
+        
+        // 虚线（从像到镜子）
+        const virtualRayMaterial = new THREE.LineDashedMaterial({ color: 0xc4b5fd, dashSize: 0.2, gapSize: 0.1, transparent: true, opacity: 0.4 });
+        const virtualRayPoints = [new THREE.Vector3(0, 0, 0), new THREE.Vector3(0, 0, 0)];
+        const virtualRayGeometry = new THREE.BufferGeometry().setFromPoints(virtualRayPoints);
+        const virtualRayLine = new THREE.Line(virtualRayGeometry, virtualRayMaterial);
+        virtualRayLine.computeLineDistances();
+        scene.add(virtualRayLine);
+        
+        camera.position.set(0, 5, 12);
+        camera.lookAt(0, 2, 0);
+        
+        function update() {
+            const objectX = parseFloat(document.getElementById('objectX').value);
+            const objectY = parseFloat(document.getElementById('objectY').value);
+            const objectColor = document.getElementById('objectColor').value;
+            
+            document.getElementById('objectXValue').textContent = Math.abs(objectX).toFixed(1);
+            document.getElementById('objectYValue').textContent = objectY.toFixed(1);
+            document.getElementById('objectDist').textContent = Math.abs(objectX).toFixed(1);
+            document.getElementById('imageDist').textContent = Math.abs(objectX).toFixed(1);
+            
+            // 更新物体位置
+            objectGroup.position.set(objectX, objectY / 2, 0);
+            arrow.scale.y = objectY;
+            arrow.position.y = objectY / 2;
+            arrowMaterial.color.set(objectColor);
+            base.position.y = 0;
+            
+            // 更新像的位置（关于镜面对称）
+            imageGroup.position.set(-objectX, objectY / 2, 0);
+            imageArrow.scale.y = objectY;
+            imageArrow.position.y = objectY / 2;
+            imageArrowMaterial.color.set(objectColor);
+            imageBase.position.y = 0;
+            
+            // 更新光线
+            const rayPositions = [
+                new THREE.Vector3(objectX, objectY, 0),
+                new THREE.Vector3(0, objectY, 0),
+                new THREE.Vector3(5, 5, 8)
+            ];
+            rayGeometry.setFromPoints(rayPositions);
+            rayLine.computeLineDistances();
+            
+            // 更新虚线
+            const virtualPositions = [
+                new THREE.Vector3(-objectX, objectY, 0),
+                new THREE.Vector3(0, objectY, 0)
+            ];
+            virtualRayGeometry.setFromPoints(virtualPositions);
+            virtualRayLine.computeLineDistances();
+            
+            renderer.render(scene, camera);
+            requestAnimationFrame(update);
+        }
+        
+        document.getElementById('objectX').addEventListener('input', update);
+        document.getElementById('objectY').addEventListener('input', update);
+        document.getElementById('objectColor').addEventListener('input', update);
+        
+        update();
+        
+        window.addEventListener('resize', () => {
+            camera.aspect = document.getElementById('canvas-container').clientWidth / document.getElementById('canvas-container').clientHeight;
+            camera.updateProjectionMatrix();
+            renderer.setSize(document.getElementById('canvas-container').clientWidth, document.getElementById('canvas-container').clientHeight);
+        });
+    </script>
+</body>
+</html>
