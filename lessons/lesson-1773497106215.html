@@ -1,0 +1,173 @@
+<!DOCTYPE html>
+<html lang="zh-CN">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>压强 P = F/A - 交互式演示</title>
+    <script src="https://cdn.tailwindcss.com"></script>
+    <script src="https://cdnjs.cloudflare.com/ajax/libs/three.js/r134/three.min.js"></script>
+    <link rel="stylesheet" href="https://cdn.jsdelivr.net/npm/katex@0.16.11/dist/katex.min.css">
+    <script src="https://cdn.jsdelivr.net/npm/katex@0.16.11/dist/katex.min.js"></script>
+    <style>
+        :root { --bg-gradient: linear-gradient(180deg, #0F172A 0%, #1e3a5f 50%, #155E75 100%); --nav-bg: rgba(15, 23, 42, 0.95); --primary: #F59E0B; --accent: #FBBF24; }
+        * { margin: 0; padding: 0; box-sizing: border-box; }
+        body { font-family: system-ui, sans-serif; background: var(--bg-gradient); color: #F8FAFC; min-height: 100vh; }
+        nav { position: fixed; top: 0; left: 0; right: 0; background: var(--nav-bg); border-bottom: 1px solid rgba(245, 158, 11, 0.3); padding: 1rem 2rem; z-index: 100; }
+        .nav-title { font-size: 1.5rem; font-weight: 700; background: linear-gradient(135deg, #F59E0B, #FBBF24); -webkit-background-clip: text; -webkit-text-fill-color: transparent; }
+        #main-container { display: flex; margin-top: 70px; min-height: calc(100vh - 70px); }
+        #sidebar { width: 300px; background: rgba(15, 23, 42, 0.9); padding: 1.5rem; overflow-y: auto; border-right: 1px solid rgba(245, 158, 11, 0.2); }
+        #canvas-container { flex: 1; position: relative; }
+        #controls { position: absolute; bottom: 20px; left: 50%; transform: translateX(-50%); background: rgba(30, 58, 95, 0.8); backdrop-filter: blur(10px); border: 1px solid rgba(245, 158, 11, 0.3); border-radius: 16px; padding: 1.5rem; display: flex; gap: 2rem; }
+        .control-group { text-align: center; }
+        .control-group label { display: block; margin-bottom: 0.5rem; color: #CBD5E1; }
+        .control-group input[type="range"] { width: 140px; height: 6px; -webkit-appearance: none; background: rgba(255,255,255,0.2); border-radius: 3px; }
+        .control-group input[type="range"]::-webkit-slider-thumb { -webkit-appearance: none; width: 18px; height: 18px; background: linear-gradient(135deg, #F59E0B, #FBBF24); border-radius: 50%; cursor: pointer; }
+        .value-display { font-size: 1.4rem; font-weight: 700; color: #FBBF24; margin-top: 0.5rem; font-family: monospace; }
+        .sidebar-section { margin-bottom: 1.5rem; }
+        .sidebar-title { font-size: 1.1rem; font-weight: 600; color: #F59E0B; margin-bottom: 0.75rem; }
+        .sidebar-content { color: #CBD5E1; line-height: 1.6; font-size: 0.95rem; }
+        .formula-box { background: rgba(245, 158, 11, 0.15); border: 1px solid rgba(245, 158, 11, 0.3); border-radius: 8px; padding: 1rem; text-align: center; margin: 1rem 0; }
+        .example-card { background: rgba(255,255,255,0.08); border-radius: 8px; padding: 0.75rem; margin-bottom: 0.5rem; font-size: 0.85rem; }
+        .pressure-indicator { position: absolute; top: 20px; right: 20px; background: rgba(15,23,42,0.9); border: 2px solid rgba(245,158,11,0.5); border-radius: 12px; padding: 1rem; text-align: center; }
+        .pressure-bar { width: 100px; height: 10px; background: rgba(255,255,255,0.2); border-radius: 5px; overflow: hidden; margin: 0.5rem 0; }
+        .pressure-fill { height: 100%; background: linear-gradient(90deg, #22C55E, #F59E0B, #EF4444); transition: width 0.3s; }
+    </style>
+</head>
+<body>
+    <nav><div class="nav-title">📌 压强 P = F / A</div></nav>
+    <div id="main-container">
+        <div id="sidebar">
+            <div class="sidebar-section">
+                <div class="sidebar-title">🎯 学习目标</div>
+                <div class="sidebar-content">
+                    <div>• 理解压强的定义和公式</div>
+                    <div>• 掌握压强与力、面积的关系</div>
+                    <div>• 能解释生活中的压强现象</div>
+                </div>
+            </div>
+            <div class="sidebar-section">
+                <div class="sidebar-title">📐 核心公式</div>
+                <div class="formula-box"><span style="font-size: 1.6rem;">$$P = \frac{F}{A}$$</span></div>
+                <div class="sidebar-content" style="font-size: 0.85rem;">
+                    <strong>P</strong> = 压强 (帕斯卡 Pa)<br>
+                    <strong>F</strong> = 压力 (牛顿 N)<br>
+                    <strong>A</strong> = 受力面积 (平方米 m²)
+                </div>
+            </div>
+            <div class="sidebar-section">
+                <div class="sidebar-title">💡 原理解析</div>
+                <div class="sidebar-content">
+                    <p><strong>压强</strong>表示压力的作用效果。同样的力，作用面积越小，压强越大！</p>
+                    <div class="example-card">📍 <strong>针尖</strong>：面积极小，轻轻一按就能刺入</div>
+                    <div class="example-card">⛷️ <strong>滑雪板</strong>：增大面积，减小压强，不会陷入雪中</div>
+                    <div class="example-card">🚜 <strong>坦克履带</strong>：增大接触面积，减小对地面的压强</div>
+                </div>
+            </div>
+        </div>
+        <div id="canvas-container">
+            <div class="pressure-indicator">
+                <div style="color: #FBBF24; font-weight: 600;">压强大小</div>
+                <div class="pressure-bar"><div class="pressure-fill" id="pressureBar" style="width: 50%;"></div></div>
+                <div class="value-display"><span id="pressureValue">500</span> Pa</div>
+            </div>
+        </div>
+        <div id="controls">
+            <div class="control-group">
+                <label>🔴 压力 F (N)</label>
+                <input type="range" id="force" min="10" max="200" value="100">
+                <div class="value-display"><span id="forceValue">100</span> N</div>
+            </div>
+            <div class="control-group">
+                <label>🔵 受力面积 A (cm²)</label>
+                <input type="range" id="area" min="1" max="50" value="10">
+                <div class="value-display"><span id="areaValue">10</span> cm²</div>
+            </div>
+            <div class="control-group">
+                <label>🟢 压强 P (Pa)</label>
+                <div class="value-display"><span id="pressureDisplay">10000</span></div>
+            </div>
+        </div>
+    </div>
+    <script>
+        const scene = new THREE.Scene();
+        const camera = new THREE.PerspectiveCamera(60, window.innerWidth / window.innerHeight, 0.1, 1000);
+        const renderer = new THREE.WebGLRenderer({ antialias: true, alpha: true });
+        renderer.setSize(document.getElementById('canvas-container').clientWidth, document.getElementById('canvas-container').clientHeight);
+        document.getElementById('canvas-container').appendChild(renderer.domElement);
+        
+        const ambientLight = new THREE.HemisphereLight(0xffffff, 0x444444, 0.6);
+        scene.add(ambientLight);
+        const directionalLight = new THREE.DirectionalLight(0xffffff, 0.8);
+        directionalLight.position.set(5, 10, 7);
+        scene.add(directionalLight);
+        
+        // 地面
+        const groundGeometry = new THREE.PlaneGeometry(20, 20);
+        const groundMaterial = new THREE.MeshStandardMaterial({ color: 0x1e293b, roughness: 0.9 });
+        const ground = new THREE.Mesh(groundGeometry, groundMaterial);
+        ground.rotation.x = -Math.PI / 2;
+        scene.add(ground);
+        
+        // 物体（可调节大小表示面积）
+        const objectGroup = new THREE.Group();
+        const baseGeometry = new THREE.BoxGeometry(1, 0.5, 1);
+        const baseMaterial = new THREE.MeshStandardMaterial({ color: 0xF59E0B, roughness: 0.4, metalness: 0.6 });
+        const base = new THREE.Mesh(baseGeometry, baseMaterial);
+        base.castShadow = true;
+        objectGroup.add(base);
+        
+        // 向下的力箭头
+        const arrowGroup = new THREE.Group();
+        const arrowGeometry = new THREE.CylinderGeometry(0.1, 0.1, 2, 8);
+        const arrowMaterial = new THREE.MeshStandardMaterial({ color: 0xEF4444 });
+        const arrowShaft = new THREE.Mesh(arrowGeometry, arrowMaterial);
+        arrowShaft.position.y = -1;
+        arrowGroup.add(arrowShaft);
+        const arrowCone = new THREE.Mesh(new THREE.ConeGeometry(0.2, 0.5, 8), arrowMaterial);
+        arrowCone.position.y = -2;
+        arrowGroup.add(arrowCone);
+        arrowGroup.position.y = 1.5;
+        objectGroup.add(arrowGroup);
+        
+        objectGroup.position.y = 0.25;
+        scene.add(objectGroup);
+        
+        camera.position.set(0, 6, 8);
+        camera.lookAt(0, 0, 0);
+        
+        function update() {
+            const force = parseFloat(document.getElementById('force').value);
+            const areaCm2 = parseFloat(document.getElementById('area').value);
+            const areaM2 = areaCm2 / 10000;
+            const pressure = force / areaM2;
+            
+            document.getElementById('forceValue').textContent = force;
+            document.getElementById('areaValue').textContent = areaCm2;
+            document.getElementById('pressureDisplay').textContent = Math.round(pressure).toLocaleString();
+            document.getElementById('pressureValue').textContent = Math.round(pressure / 100).toLocaleString();
+            
+            const pressurePercent = Math.min((pressure / 200000) * 100, 100);
+            document.getElementById('pressureBar').style.width = pressurePercent + '%';
+            
+            const scale = Math.sqrt(areaCm2 / 10);
+            base.scale.set(scale, 0.5, scale);
+            arrowGroup.scale.y = 0.5 + (force / 200) * 1.5;
+            
+            renderer.render(scene, camera);
+            requestAnimationFrame(update);
+        }
+        
+        document.getElementById('force').addEventListener('input', update);
+        document.getElementById('area').addEventListener('input', update);
+        
+        renderMathInElement(document.body, { delimiters: [{left: '$$', right: '$$', display: true}] });
+        update();
+        
+        window.addEventListener('resize', () => {
+            camera.aspect = document.getElementById('canvas-container').clientWidth / document.getElementById('canvas-container').clientHeight;
+            camera.updateProjectionMatrix();
+            renderer.setSize(document.getElementById('canvas-container').clientWidth, document.getElementById('canvas-container').clientHeight);
+        });
+    </script>
+</body>
+</html>
