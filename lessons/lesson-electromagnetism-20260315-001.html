@@ -1,0 +1,47 @@
+<!DOCTYPE html>
+<html lang="zh-CN">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>电生磁 - 奥斯特实验交互演示</title>
+    <script src="https://cdn.tailwindcss.com"></script>
+    <script src="https://cdnjs.cloudflare.com/ajax/libs/three.js/r134/three.min.js"></script>
+    <link rel="stylesheet" href="https://cdn.jsdelivr.net/npm/katex@0.16.11/dist/katex.min.css">
+    <script src="https://cdn.jsdelivr.net/npm/katex@0.16.11/dist/katex.min.js"></script>
+    <style>:root{--primary-gradient:linear-gradient(135deg,#14B8A6 0%,#06B6D4 50%,#22D3EE 100%);--bg-gradient:linear-gradient(180deg,#0F172A 0%,#164E63 50%,#155E75 100%)}body{background:var(--bg-gradient);color:#F8FAFC;font-family:Inter,sans-serif;overflow:hidden}.glass-panel{background:rgba(255,255,255,0.08);border:1px solid rgba(255,255,255,0.15);backdrop-filter:blur(12px);border-radius:12px}.gradient-text{background:var(--primary-gradient);-webkit-background-clip:text;-webkit-text-fill-color:transparent}#canvas-container{width:100%;height:70vh;border-radius:16px;overflow:hidden}.control-slider{-webkit-appearance:none;width:100%;height:6px;border-radius:3px;background:rgba(255,255,255,0.2)}.control-slider::-webkit-slider-thumb{-webkit-appearance:none;width:18px;height:18px;border-radius:50%;background:linear-gradient(135deg,#14B8A6,#22D3EE);cursor:pointer}</style>
+</head>
+<body class="h-screen flex flex-col">
+    <nav class="glass-panel mx-4 mt-4 px-6 py-4 flex justify-between items-center">
+        <div><h1 class="text-2xl font-bold gradient-text">电生磁 · Electromagnetism</h1><p class="text-sm text-gray-400">奥斯特实验交互演示</p></div>
+        <div class="flex gap-3">
+            <button onclick="resetScene()" class="px-4 py-2 rounded-lg bg-white/10 hover:bg-white/20 transition">重置</button>
+            <button onclick="toggleAnimation()" id="playBtn" class="px-4 py-2 rounded-lg bg-gradient-to-r from-teal-500 to-cyan-500 hover:from-teal-400 hover:to-cyan-400 transition">暂停</button>
+        </div>
+    </nav>
+    <div class="flex-1 flex gap-4 p-4">
+        <aside class="w-80 glass-panel p-6 overflow-y-auto">
+            <h2 class="text-lg font-semibold mb-4 text-cyan-400">学习目标</h2>
+            <ul class="space-y-2 mb-6 text-sm">
+                <li class="flex items-center gap-2"><input type="checkbox" checked class="accent-cyan-500"> 理解电流产生磁场</li>
+                <li class="flex items-center gap-2"><input type="checkbox" class="accent-cyan-500"> 掌握右手螺旋定则</li>
+                <li class="flex items-center gap-2"><input type="checkbox" class="accent-cyan-500"> 观察磁场线分布</li>
+            </ul>
+            <h2 class="text-lg font-semibold mb-4 text-cyan-400">核心公式</h2>
+            <div class="glass-panel p-4 mb-4"><div id="f1" class="text-center text-lg"></div><p class="text-xs text-gray-400 mt-2 text-center">毕奥-萨伐尔定律</p></div>
+            <div class="glass-panel p-4"><div id="f2" class="text-center text-lg"></div><p class="text-xs text-gray-400 mt-2 text-center">安培环路定理</p></div>
+            <h2 class="text-lg font-semibold mb-4 mt-6 text-cyan-400">原理说明</h2>
+            <p class="text-sm text-gray-300 leading-relaxed">当电流通过导线时，会在导线周围产生环形磁场。磁场的方向可以用<b>右手螺旋定则</b>判断：右手握住导线，大拇指指向电流方向，四指弯曲的方向就是磁场方向。</p>
+        </aside>
+        <main class="flex-1 flex flex-col gap-4">
+            <div id="canvas-container" class="glass-panel"></div>
+            <div class="glass-panel p-4 flex gap-8 items-center">
+                <div class="flex-1"><label class="text-sm text-gray-400 block mb-2">电流强度 (A)</label><input type="range" id="cS" min="0" max="10" step="0.1" value="5" class="control-slider"><span id="cV" class="text-cyan-400 font-mono">5.0 A</span></div>
+                <div class="flex-1"><label class="text-sm text-gray-400 block mb-2">磁场线密度</label><input type="range" id="dS" min="8" max="32" step="4" value="16" class="control-slider"><span id="dV" class="text-cyan-400 font-mono">16</span></div>
+                <div class="flex-1"><label class="text-sm text-gray-400 block mb-2">旋转速度</label><input type="range" id="sS" min="0" max="2" step="0.1" value="0.5" class="control-slider"><span id="sV" class="text-cyan-400 font-mono">0.5x</span></div>
+            </div>
+        </main>
+    </div>
+    <footer class="text-center py-2 text-xs text-gray-500">由 AetherViz Master 为你生成 ❤️ · 探索电磁学的奥秘</footer>
+    <script>(function(){THREE.OrbitControls=function(c,d){this.camera=c;this.domElement=d;this.enableDamping=true;this.dampingFactor=0.05;let dragging=false,prev={x:0,y:0},sph=new THREE.Spherical();sph.setFromVector3(c.position);d.addEventListener('mousedown',e=>{dragging=true;prev={x:e.clientX,y:e.clientY}});d.addEventListener('mousemove',e=>{if(!dragging)return;sph.theta-=(e.clientX-prev.x)*0.01;sph.phi+=(e.clientY-prev.y)*0.01;sph.phi=Math.max(0.1,Math.min(Math.PI-0.1,sph.phi));c.position.setFromSpherical(sph);c.lookAt(0,0,0);prev={x:e.clientX,y:e.clientY}});d.addEventListener('mouseup',()=>dragging=false);d.addEventListener('wheel',e=>{sph.radius*=e.deltaY>0?1.1:0.9;sph.radius=Math.max(5,Math.min(50,sph.radius));c.position.setFromSpherical(sph);c.lookAt(0,0,0)})}})();const scene=new THREE.Scene(),camera=new THREE.PerspectiveCamera(60,window.innerWidth/window.innerHeight,0.1,1000),renderer=new THREE.WebGLRenderer({antialias:true,alpha:true});renderer.setSize(document.getElementById('canvas-container').clientWidth,document.getElementById('canvas-container').clientHeight);renderer.setClearColor(0x0F172A,1);document.getElementById('canvas-container').appendChild(renderer.domElement);camera.position.set(15,10,15);camera.lookAt(0,0,0);const controls=new THREE.OrbitControls(camera,renderer.domElement);scene.add(new THREE.AmbientLight(0x404040,0.5));const dl=new THREE.DirectionalLight(0xffffff,0.8);dl.position.set(10,10,10);scene.add(dl);const wire=new THREE.Mesh(new THREE.CylinderGeometry(0.3,0.3,20,16),new THREE.MeshStandardMaterial({color:0xFBBF24,metalness:0.8,roughness:0.2,emissive:0xF59E0B,emissiveIntensity:0.3}));scene.add(wire);const arrow=new THREE.Mesh(new THREE.ConeGeometry(0.5,1.5,8),new THREE.MeshStandardMaterial({color:0xEF4444,emissive:0xEF4444,emissiveIntensity:0.5}));arrow.position.y=8;scene.add(arrow);let lines=[],cs={c:5,d:16,s:0.5,t:0},animating=true;function createLines(){lines.forEach(l=>scene.remove(l));lines=[];for(let i=0;i<cs.d;i++){let pts=[];for(let t=0;t<=Math.PI*2;t+=0.1){pts.push(new THREE.Vector3((3+(i%3)*2)*Math.cos((i/cs.d)*Math.PI*2+t*0.3+cs.t),Math.sin(t*3)*2,(3+(i%3)*2)*Math.sin((i/cs.d)*Math.PI*2+t*0.3+cs.t)))}let geo=new THREE.BufferGeometry().setFromPoints(pts),mat=new THREE.LineBasicMaterial({color:new THREE.Color().setHSL(0.5+i/cs.d*0.2,0.8,0.5),transparent:true,opacity:0.6+cs.c/20}),line=new THREE.Line(geo,mat);scene.add(line);lines.push(line)}}function animate(){requestAnimationFrame(animate);if(animating&&cs.c>0){cs.t+=0.02*cs.s*(cs.c/5);arrow.rotation.y+=0.05*cs.s;createLines()}renderer.render(scene,camera)}document.getElementById('cS').addEventListener('input',e=>{cs.c=parseFloat(e.target.value);document.getElementById('cV').textContent=cs.c.toFixed(1)+' A';wire.material.emissiveIntensity=cs.c/15});document.getElementById('dS').addEventListener('input',e=>{cs.d=parseInt(e.target.value);document.getElementById('dV').textContent=cs.d});document.getElementById('sS').addEventListener('input',e=>{cs.s=parseFloat(e.target.value);document.getElementById('sV').textContent=cs.s.toFixed(1)+'x'});function toggleAnimation(){animating=!animating;document.getElementById('playBtn').textContent=animating?'暂停':'播放'}function resetScene(){cs.c=5;cs.d=16;cs.s=0.5;cs.t=0;['cS','dS','sS'].forEach((id,i)=>document.getElementById(id).value=[5,16,0.5][i]);document.getElementById('cV').textContent='5.0 A';document.getElementById('dV').textContent='16';document.getElementById('sV').textContent='0.5x';camera.position.set(15,10,15);camera.lookAt(0,0,0)}katex.render("d\\\\vec{B}=\\\\frac{\\\\mu_0I}{4\\\\pi}\\\\frac{d\\\\vec{l}\\\\times\\\\vec{r}}{r^3}",document.getElementById('f1'),{throwOnError:false});katex.render("\\\\oint\\\\vec{B}\\\\cdotd\\\\vec{l}=\\\\mu_0I_{enc}",document.getElementById('f2'),{throwOnError:false});window.addEventListener('resize',()=>{camera.aspect=document.getElementById('canvas-container').clientWidth/document.getElementById('canvas-container').clientHeight;camera.updateProjectionMatrix();renderer.setSize(document.getElementById('canvas-container').clientWidth,document.getElementById('canvas-container').clientHeight)});createLines();animate()</script>
+</body>
+</html>
