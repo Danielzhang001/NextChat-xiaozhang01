@@ -1,0 +1,391 @@
+<!DOCTYPE html>
+<html lang="zh-CN">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>电生磁 - 电磁学入门</title>
+    <style>
+        * {
+            margin: 0;
+            padding: 0;
+            box-sizing: border-box;
+        }
+        body {
+            font-family: 'PingFang SC', 'Microsoft YaHei', sans-serif;
+            background: linear-gradient(135deg, #1a1a2e 0%, #16213e 100%);
+            color: #fff;
+            line-height: 1.8;
+            min-height: 100vh;
+        }
+        .container {
+            max-width: 900px;
+            margin: 0 auto;
+            padding: 40px 20px;
+        }
+        header {
+            text-align: center;
+            padding: 60px 0;
+            background: linear-gradient(180deg, rgba(99, 102, 241, 0.2) 0%, transparent 100%);
+            border-radius: 20px;
+            margin-bottom: 40px;
+        }
+        h1 {
+            font-size: 3em;
+            background: linear-gradient(135deg, #60a5fa, #a78bfa);
+            -webkit-background-clip: text;
+            -webkit-text-fill-color: transparent;
+            background-clip: text;
+            margin-bottom: 20px;
+        }
+        .subtitle {
+            font-size: 1.2em;
+            color: #94a3b8;
+        }
+        section {
+            background: rgba(255, 255, 255, 0.05);
+            border-radius: 16px;
+            padding: 40px;
+            margin-bottom: 30px;
+            backdrop-filter: blur(10px);
+            border: 1px solid rgba(255, 255, 255, 0.1);
+        }
+        h2 {
+            font-size: 1.8em;
+            color: #60a5fa;
+            margin-bottom: 25px;
+            padding-bottom: 15px;
+            border-bottom: 2px solid rgba(96, 165, 250, 0.3);
+        }
+        h3 {
+            font-size: 1.3em;
+            color: #a78bfa;
+            margin: 25px 0 15px;
+        }
+        p {
+            color: #cbd5e1;
+            margin-bottom: 15px;
+        }
+        .highlight {
+            background: linear-gradient(135deg, rgba(96, 165, 250, 0.2), rgba(167, 139, 250, 0.2));
+            padding: 20px;
+            border-radius: 12px;
+            border-left: 4px solid #60a5fa;
+            margin: 20px 0;
+        }
+        .formula {
+            background: rgba(0, 0, 0, 0.3);
+            padding: 20px 30px;
+            border-radius: 10px;
+            font-family: 'Courier New', monospace;
+            font-size: 1.2em;
+            text-align: center;
+            margin: 20px 0;
+            color: #fbbf24;
+        }
+        .experiment-box {
+            background: linear-gradient(135deg, rgba(16, 185, 129, 0.1), rgba(59, 130, 246, 0.1));
+            border: 2px solid #10b981;
+            border-radius: 16px;
+            padding: 30px;
+            margin: 25px 0;
+        }
+        .experiment-title {
+            font-size: 1.4em;
+            color: #10b981;
+            margin-bottom: 20px;
+            display: flex;
+            align-items: center;
+            gap: 10px;
+        }
+        ul {
+            list-style: none;
+            padding-left: 0;
+        }
+        ul li {
+            padding: 10px 0;
+            padding-left: 30px;
+            position: relative;
+            color: #cbd5e1;
+        }
+        ul li::before {
+            content: "✓";
+            position: absolute;
+            left: 0;
+            color: #10b981;
+            font-weight: bold;
+        }
+        .animation-box {
+            background: rgba(0, 0, 0, 0.4);
+            border-radius: 12px;
+            padding: 30px;
+            text-align: center;
+            margin: 20px 0;
+        }
+        .magnetic-field {
+            width: 200px;
+            height: 200px;
+            margin: 20px auto;
+            position: relative;
+        }
+        .wire {
+            width: 30px;
+            height: 30px;
+            background: #f59e0b;
+            border-radius: 50%;
+            position: absolute;
+            top: 50%;
+            left: 50%;
+            transform: translate(-50%, -50%);
+            box-shadow: 0 0 20px #f59e0b;
+        }
+        .field-line {
+            position: absolute;
+            border: 2px solid rgba(96, 165, 250, 0.6);
+            border-radius: 50%;
+            top: 50%;
+            left: 50%;
+            transform: translate(-50%, -50%);
+            animation: pulse 2s infinite;
+        }
+        .field-line:nth-child(2) { width: 80px; height: 80px; animation-delay: 0.2s; }
+        .field-line:nth-child(3) { width: 120px; height: 120px; animation-delay: 0.4s; }
+        .field-line:nth-child(4) { width: 160px; height: 160px; animation-delay: 0.6s; }
+        
+        @keyframes pulse {
+            0%, 100% { opacity: 0.3; }
+            50% { opacity: 0.8; }
+        }
+        .right-hand {
+            display: flex;
+            justify-content: center;
+            gap: 40px;
+            margin: 30px 0;
+            flex-wrap: wrap;
+        }
+        .hand-demo {
+            background: rgba(255, 255, 255, 0.05);
+            padding: 20px;
+            border-radius: 12px;
+            text-align: center;
+        }
+        .solenoid {
+            display: flex;
+            justify-content: center;
+            gap: 5px;
+            margin: 30px 0;
+        }
+        .coil {
+            width: 40px;
+            height: 60px;
+            border: 3px solid #a78bfa;
+            border-radius: 50%;
+            background: transparent;
+        }
+        footer {
+            text-align: center;
+            padding: 40px;
+            color: #64748b;
+            font-size: 0.9em;
+        }
+        .progress-bar {
+            position: fixed;
+            top: 0;
+            left: 0;
+            height: 4px;
+            background: linear-gradient(90deg, #60a5fa, #a78bfa);
+            width: 0%;
+            transition: width 0.3s;
+        }
+    </style>
+</head>
+<body>
+    <div class="progress-bar" id="progress"></div>
+    <div class="container">
+        <header>
+            <h1>⚡ 电生磁 ⚡</h1>
+            <p class="subtitle">电磁学入门 · 高中物理</p>
+        </header>
+
+        <section id="intro">
+            <h2>📚 章节导学</h2>
+            <p>电流能够产生磁场，这一现象的发现标志着电磁学时代的开启。本节课我们将学习：</p>
+            <ul>
+                <li>奥斯特实验与电流的磁效应</li>
+                <li>通电直导线的磁场分布</li>
+                <li>通电螺线管的磁场</li>
+                <li>电磁铁及其应用</li>
+                <li>电动机原理</li>
+            </ul>
+        </section>
+
+        <section id="oersted">
+            <h2>🔬 奥斯特实验</h2>
+            <div class="experiment-box">
+                <div class="experiment-title">🧪 实验装置</div>
+                <p>1820年，丹麦物理学家奥斯特在实验中偶然发现：<strong>当导线中有电流通过时，放在导线旁边的小磁针会发生偏转</strong>。</p>
+                <p>这一发现首次揭示了<strong>电与磁的联系</strong>，开创了电磁学的新时代！</p>
+            </div>
+            
+            <h3>实验结论</h3>
+            <div class="highlight">
+                <p><strong>电流能够产生磁场 —— 电流的磁效应</strong></p>
+                <p>运动的电荷（电流）周围空间存在磁场</p>
+            </div>
+        </section>
+
+        <section id="straight-wire">
+            <h2>📏 通电直导线的磁场</h2>
+            
+            <h3>磁场分布规律</h3>
+            <p>通电直导线周围的磁场是一种<strong>同心圆</strong>形状的磁场。</p>
+            
+            <div class="animation-box">
+                <div class="magnetic-field">
+                    <div class="wire"></div>
+                    <div class="field-line"></div>
+                    <div class="field-line"></div>
+                    <div class="field-line"></div>
+                </div>
+                <p>↑ 通电直导线周围的磁场分布示意图</p>
+            </div>
+
+            <h3>安培定则（右手螺旋定则）</h3>
+            <p>用<strong>右手握住导线</strong>，让<strong>大拇指指向电流的方向</strong>，则四指弯曲的方向就是磁感线的方向。</p>
+            
+            <div class="formula">
+                电流方向 ↔ 磁场方向（右手定则）
+            </div>
+
+            <h3>磁场强度</h3>
+            <p>磁场强度与<strong>电流强度</strong>成正比，与<strong>到导线的距离</strong>成反比：</p>
+            <div class="formula">
+                B ∝ I / r
+            </div>
+        </section>
+
+        <section id="solenoid">
+            <h2>🧲 通电螺线管的磁场</h2>
+            
+            <p>螺线管（线圈）通电后，其磁场与<strong>条形磁铁</strong>的磁场非常相似。</p>
+            
+            <div class="animation-box">
+                <div class="solenoid">
+                    <div class="coil"></div>
+                    <div class="coil"></div>
+                    <div class="coil"></div>
+                    <div class="coil"></div>
+                    <div class="coil"></div>
+                    <div class="coil"></div>
+                </div>
+                <p>↑ 通电螺线管磁场分布</p>
+            </div>
+
+            <h3>安培定则（进阶版）</h3>
+            <div class="highlight">
+                <p>用<strong>右手握住螺线管</strong>，让四指指向电流的方向，则<strong>大拇指所指的一端就是螺线管的N极</strong>。</p>
+            </div>
+
+            <h3>磁场特点</h3>
+            <ul>
+                <li>内部磁场强度均匀（近似匀强磁场）</li>
+                <li>两端磁场最强，相当于磁铁的两极</li>
+                <li>电流方向改变时，南北极也会改变</li>
+            </ul>
+        </section>
+
+        <section id="electromagnet">
+            <h2>🧙 电磁铁</h2>
+            
+            <h3>什么是电磁铁？</h3>
+            <p>电磁铁是内部<strong>带有铁芯</strong>的通电螺线管。铁芯被磁化后能<strong>大大增强</strong>磁场。</p>
+            
+            <h3>工作原理</h3>
+            <div class="formula">
+                通电 → 螺线管产生磁场 → 铁芯被磁化 → 磁场大大增强
+            </div>
+
+            <h3>电磁铁的特点</h3>
+            <ul>
+                <li><strong>磁性可控</strong>：通电有磁性，断电无磁性</li>
+                <li><strong>磁性强弱可控</strong>：电流越大，磁性越强</li>
+                <li><strong>极性可控</strong>：电流方向改变，南北极对调</li>
+            </ul>
+
+            <h3>应用实例</h3>
+            <div class="highlight">
+                <p>📞 电话听筒 &nbsp; 🛏️ 电磁起重机 &nbsp; 🔔 电铃 &nbsp; 🚂 磁悬浮列车</p>
+                <p>🏥 核磁共振(MRI) &nbsp; ⚙️ 电磁继电器</p>
+            </div>
+        </section>
+
+        <section id="motor">
+            <h2>🎯 电动机原理</h2>
+            
+            <h3>磁场对电流的作用</h3>
+            <p>通电导体在磁场中会受到<strong>力的作用</strong>，力的方向与电流方向和磁场方向都有关。</p>
+            
+            <div class="formula">
+                电流 → 磁场 → 力 (F = BIL)
+            </div>
+
+            <h3>电动机构造</h3>
+            <ul>
+                <li><strong>定子</strong>：提供磁场（永久磁铁或电磁铁）</li>
+                <li><strong>转子</strong>：绕在铁芯上的线圈（通电导体）</li>
+                <li><strong>换向器</strong>：自动改变电流方向</li>
+            </ul>
+
+            <h3>能量转化</h3>
+            <div class="highlight">
+                <p><strong>电能 → 机械能</strong></p>
+                <p>电动机是将电能转化为机械能的装置</p>
+            </div>
+
+            <h3>应用</h3>
+            <p>电风扇、洗衣机、电动汽车、空调室内机... 所有需要动力的地方都有电动机的身影！</p>
+        </section>
+
+        <section id="summary">
+            <h2>📝 本节小结</h2>
+            
+            <div class="highlight">
+                <h3>电生磁的核心要点：</h3>
+                <ul>
+                    <li>电流周围存在磁场（奥斯特实验）</li>
+                    <li>通电直导线周围磁场是同心圆</li>
+                    <li>通电螺线管磁场与条形磁铁相似</li>
+                    <li>电磁铁 = 通电螺线管 + 铁芯</li>
+                    <li>磁场对电流有力的作用 → 电动机</li>
+                </ul>
+            </div>
+
+            <h3>安培定则汇总</h3>
+            <div class="right-hand">
+                <div class="hand-demo">
+                    <h4>✋ 直导线</h4>
+                    <p>拇指=电流方向<br>四指=磁感线方向</p>
+                </div>
+                <div class="hand-demo">
+                    <h4>✋ 螺线管</h4>
+                    <p>四指=电流方向<br>拇指=N极方向</p>
+                </div>
+            </div>
+        </section>
+
+        <footer>
+            <p>电生磁 · 电磁学基础 | 高中物理</p>
+            <p>Created with ❤️ for Physics Education</p>
+        </footer>
+    </div>
+
+    <script>
+        // Progress bar
+        window.addEventListener('scroll', () => {
+            const winScroll = document.body.scrollTop || document.documentElement.scrollTop;
+            const height = document.documentElement.scrollHeight - document.documentElement.clientHeight;
+            const scrolled = (winScroll / height) * 100;
+            document.getElementById('progress').style.width = scrolled + '%';
+        });
+    </script>
+</body>
+</html>
