@@ -1,0 +1,372 @@
+<!DOCTYPE html>
+<html lang="zh-CN">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>九年级物理 - 欧姆定律</title>
+    <script src="https://cdnjs.cloudflare.com/ajax/libs/three.js/r134/three.min.js"></script>
+    <script src="https://cdn.tailwindcss.com"></script>
+    <link rel="stylesheet" href="https://cdn.jsdelivr.net/npm/katex@0.16.11/dist/katex.min.css">
+    <script src="https://cdn.jsdelivr.net/npm/katex@0.16.11/dist/katex.min.js"></script>
+    <script src="https://cdn.jsdelivr.net/npm/katex@0.16.11/dist/contrib/auto-render.min.js"></script>
+    <style>
+        :root {
+            --primary-gradient: linear-gradient(135deg, #14B8A6 0%, #06B6D4 50%, #22D3EE 100%);
+            --bg-gradient: linear-gradient(180deg, #0F172A 0%, #164E63 50%, #155E75 100%);
+            --glass-bg: rgba(255, 255, 255, 0.08);
+            --glass-border: rgba(255, 255, 255, 0.15);
+            --text-primary: #F8FAFC;
+            --text-secondary: #CBD5E1;
+        }
+        body { margin: 0; overflow: hidden; font-family: 'Inter', system-ui, sans-serif; background: var(--bg-gradient); color: var(--text-primary); }
+        #canvas-container { position: fixed; top: 0; left: 0; width: 100%; height: 100%; z-index: 1; }
+        .nav { position: fixed; top: 0; left: 0; right: 0; height: 60px; background: rgba(15, 23, 42, 0.85); border-bottom: 1px solid rgba(20, 184, 166, 0.3); display: flex; align-items: center; justify-content: space-between; padding: 0 24px; z-index: 100; backdrop-filter: blur(10px); }
+        .nav-title { font-size: 24px; font-weight: bold; background: var(--primary-gradient); -webkit-background-clip: text; -webkit-text-fill-color: transparent; }
+        .nav-btn { background: var(--glass-bg); border: 1px solid var(--glass-border); color: var(--text-primary); padding: 8px 16px; border-radius: 8px; cursor: pointer; transition: all 0.3s; }
+        .nav-btn:hover { background: rgba(20, 184, 166, 0.2); }
+        .sidebar { position: fixed; left: 0; top: 60px; bottom: 0; width: 320px; background: rgba(15, 23, 42, 0.9); border-right: 1px solid rgba(20, 184, 166, 0.2); padding: 20px; overflow-y: auto; z-index: 50; }
+        .sidebar h2 { color: #22D3EE; font-size: 18px; margin-bottom: 12px; }
+        .sidebar p { color: var(--text-secondary); font-size: 14px; line-height: 1.6; }
+        .formula-box { background: var(--glass-bg); border: 1px solid var(--glass-border); border-radius: 12px; padding: 16px; margin: 16px 0; text-align: center; font-size: 20px; }
+        .main-content { position: fixed; left: 320px; top: 60px; right: 0; bottom: 0; z-index: 50; }
+        .control-panel { position: fixed; right: 20px; bottom: 20px; width: 300px; background: rgba(22, 78, 99, 0.7); border: 1px solid rgba(20, 184, 166, 0.25); border-radius: 16px; padding: 20px; z-index: 60; backdrop-filter: blur(10px); }
+        .slider-group { margin: 12px 0; }
+        .slider-group label { display: flex; justify-content: space-between; margin-bottom: 6px; color: var(--text-secondary); font-size: 14px; }
+        .slider-group input[type="range"] { width: 100%; height: 6px; -webkit-appearance: none; background: rgba(255, 255, 255, 0.2); border-radius: 3px; outline: none; }
+        .slider-group input[type="range"]::-webkit-slider-thumb { -webkit-appearance: none; width: 18px; height: 18px; background: var(--primary-gradient); border-radius: 50%; cursor: pointer; }
+        .quiz-panel { position: fixed; right: 20px; bottom: 220px; width: 360px; max-height: 380px; background: rgba(22, 78, 99, 0.85); border: 1px solid rgba(20, 184, 166, 0.25); border-radius: 16px; padding: 20px; z-index: 60; overflow-y: auto; backdrop-filter: blur(10px); transition: all 0.3s ease; }
+        .quiz-panel.collapsed { width: 60px; height: 60px; padding: 10px; border-radius: 50%; text-align: center; }
+        .quiz-panel.collapsed .quiz-content { display: none; }
+        .quiz-toggle { position: absolute; top: 10px; right: 10px; background: none; border: none; color: var(--text-secondary); cursor: pointer; font-size: 18px; }
+        .quiz-fab { display: none; position: fixed; right: 20px; bottom: 220px; width: 56px; height: 56px; background: var(--primary-gradient); border-radius: 50%; color: white; font-size: 24px; cursor: pointer; z-index: 70; box-shadow: 0 4px 20px rgba(20, 184, 166, 0.4); }
+        .quiz-fab.show { display: flex; align-items: center; justify-content: center; }
+        .quiz-question { margin-bottom: 16px; }
+        .quiz-question h4 { color: #22D3EE; margin-bottom: 8px; }
+        .quiz-option { display: block; padding: 8px 12px; margin: 6px 0; background: var(--glass-bg); border: 1px solid var(--glass-border); border-radius: 8px; cursor: pointer; transition: all 0.2s; }
+        .quiz-option:hover { background: rgba(20, 184, 166, 0.2); }
+        .quiz-option.correct { background: rgba(34, 197, 94, 0.3); border-color: #22C55E; }
+        .quiz-option.wrong { background: rgba(239, 68, 68, 0.3); border-color: #EF4444; }
+        @media (max-width: 768px) { .sidebar { display: none; } .main-content { left: 0; } }
+    </style>
+</head>
+<body>
+    <div id="canvas-container"></div>
+    <nav class="nav">
+        <div class="nav-title">🧪 欧姆定律 Ohm's Law</div>
+        <div>
+            <button class="nav-btn" onclick="resetScene()">🔄 重置</button>
+            <button class="nav-btn" onclick="toggleFullscreen()">⛶ 全屏</button>
+        </div>
+    </nav>
+    
+    <aside class="sidebar">
+        <h2>📚 学习目标</h2>
+        <ul style="color: var(--text-secondary); padding-left: 20px;">
+            <li>理解欧姆定律的内容和表达式</li>
+            <li>掌握电流与电压、电阻的关系</li>
+            <li>能运用欧姆定律解决简单电路问题</li>
+        </ul>
+        
+        <h2>⚡ 核心公式</h2>
+        <div class="formula-box">
+            <span class="katex-render">I = U/R</span>
+        </div>
+        <p>其中：I=电流(A)，U=电压(V)，R=电阻(Ω)</p>
+        
+        <h2>💡 定律理解</h2>
+        <p>欧姆定律表明：导体中的电流与导体两端的电压成正比，与导体的电阻成反比。</p>
+        <p><strong>重点：</strong>电阻是导体本身的属性，与电压和电流无关。</p>
+        
+        <h2>🔬 实验结论</h2>
+        <p>• 保持电阻不变时，电流与电压成正比<br>
+        • 保持电压不变时，电流与电阻成反比</p>
+    </aside>
+    
+    <main class="main-content"></main>
+    
+    <div class="control-panel">
+        <h3 style="color: #22D3EE; margin-bottom: 16px;">🎛️ 实验控制</h3>
+        <div class="slider-group">
+            <label><span>电压 U (V)</span><span id="voltage-val">6V</span></label>
+            <input type="range" id="voltage" min="0" max="12" step="0.1" value="6" oninput="updateExperiment()">
+        </div>
+        <div class="slider-group">
+            <label><span>电阻 R (Ω)</span><span id="resistance-val">10Ω</span></label>
+            <input type="range" id="resistance" min="1" max="50" step="1" value="10" oninput="updateExperiment()">
+        </div>
+        <div class="slider-group">
+            <label><span>电流 I (A)</span><span id="current-val">0.60A</span></label>
+            <input type="range" id="current" min="0" max="3" step="0.01" value="0.6" oninput="updateFromCurrent()">
+        </div>
+        <div style="margin-top: 16px; padding: 12px; background: var(--glass-bg); border-radius: 8px; text-align: center;">
+            <span style="color: var(--text-secondary);">计算结果：</span>
+            <span id="calc-result" style="color: #22D3EE; font-size: 18px;">I = 6/10 = 0.60A</span>
+        </div>
+    </div>
+    
+    <div class="quiz-panel" id="quizPanel">
+        <button class="quiz-toggle" onclick="toggleQuiz()">✕</button>
+        <h3 style="color: #22D3EE; margin-bottom: 16px;">📝 课堂测验</h3>
+        <div class="quiz-content">
+            <div class="quiz-question">
+                <h4>问题 1：欧姆定律的表达式是？</h4>
+                <div class="quiz-option" onclick="checkAnswer(this, true)">A. I = U/R</div>
+                <div class="quiz-option" onclick="checkAnswer(this, false)">B. I = UR</div>
+                <div class="quiz-option" onclick="checkAnswer(this, false)">C. I = R/U</div>
+                <div class="quiz-option" onclick="checkAnswer(this, false)">D. I = U+R</div>
+            </div>
+            <div class="quiz-question">
+                <h4>问题 2：当电压不变，电阻增大时，电流会？</h4>
+                <div class="quiz-option" onclick="checkAnswer(this, true)">A. 减小</div>
+                <div class="quiz-option" onclick="checkAnswer(this, false)">B. 增大</div>
+                <div class="quiz-option" onclick="checkAnswer(this, false)">C. 不变</div>
+                <div class="quiz-option" onclick="checkAnswer(this, false)">D. 先增后减</div>
+            </div>
+            <div class="quiz-question">
+                <h4>问题 3：电阻的大小与什么有关？</h4>
+                <div class="quiz-option" onclick="checkAnswer(this, false)">A. 电压</div>
+                <div class="quiz-option" onclick="checkAnswer(this, false)">B. 电流</div>
+                <div class="quiz-option" onclick="checkAnswer(this, true)">C. 导体本身</div>
+                <div class="quiz-option" onclick="checkAnswer(this, false)">D. 测量仪表</div>
+            </div>
+        </div>
+    </div>
+    <button class="quiz-fab" id="quizFab" onclick="expandQuiz()">📝</button>
+
+    <script>
+        // Three.js 场景
+        let scene, camera, renderer, battery, resistor, ammeter, wires = [];
+        let electronParticles;
+        
+        function init() {
+            scene = new THREE.Scene();
+            camera = new THREE.PerspectiveCamera(60, window.innerWidth / window.innerHeight, 0.1, 1000);
+            camera.position.set(0, 5, 10);
+            camera.lookAt(0, 0, 0);
+            
+            renderer = new THREE.WebGLRenderer({ antialias: true, alpha: true });
+            renderer.setSize(window.innerWidth, window.innerHeight);
+            renderer.setPixelRatio(window.devicePixelRatio);
+            document.getElementById('canvas-container').appendChild(renderer.domElement);
+            
+            // 灯光
+            const ambientLight = new THREE.HemisphereLight(0xffffff, 0x444444, 0.6);
+            scene.add(ambientLight);
+            const dirLight = new THREE.DirectionalLight(0xffffff, 0.8);
+            dirLight.position.set(5, 10, 7);
+            scene.add(dirLight);
+            
+            // 电池
+            const batteryGeo = new THREE.BoxGeometry(2, 1, 1);
+            const batteryMat = new THREE.MeshStandardMaterial({ color: 0xFBBF24, metalness: 0.3, roughness: 0.7 });
+            battery = new THREE.Mesh(batteryGeo, batteryMat);
+            battery.position.set(-4, 0, 0);
+            scene.add(battery);
+            
+            // 电阻器
+            const resistorGeo = new THREE.CylinderGeometry(0.5, 0.5, 2, 16);
+            const resistorMat = new THREE.MeshStandardMaterial({ color: 0x22D3EE, metalness: 0.5, roughness: 0.5 });
+            resistor = new THREE.Mesh(resistorGeo, resistorMat);
+            resistor.rotation.z = Math.PI / 2;
+            resistor.position.set(4, 0, 0);
+            scene.add(resistor);
+            
+            // 导线
+            const wireMat = new THREE.MeshStandardMaterial({ color: 0xFB7185, metalness: 0.6, roughness: 0.4 });
+            
+            // 上导线
+            const wire1 = new THREE.Mesh(new THREE.CylinderGeometry(0.08, 0.08, 4, 8), wireMat);
+            wire1.position.set(-2, 1.5, 0);
+            scene.add(wire1);
+            wires.push(wire1);
+            
+            // 下导线
+            const wire2 = new THREE.Mesh(new THREE.CylinderGeometry(0.08, 0.08, 4, 8), wireMat);
+            wire2.position.set(2, -1.5, 0);
+            scene.add(wire2);
+            wires.push(wire2);
+            
+            // 左导线
+            const wire3 = new THREE.Mesh(new THREE.CylinderGeometry(0.08, 0.08, 2, 8), wireMat);
+            wire3.rotation.z = Math.PI / 2;
+            wire3.position.set(-5, 0.75, 0);
+            scene.add(wire3);
+            wires.push(wire3);
+            
+            // 右导线
+            const wire4 = new THREE.Mesh(new THREE.CylinderGeometry(0.08, 0.08, 2, 8), wireMat);
+            wire4.rotation.z = Math.PI / 2;
+            wire4.position.set(5, -0.75, 0);
+            scene.add(wire4);
+            wires.push(wire4);
+            
+            // 电流表
+            const ammeterGeo = new THREE.CircleGeometry(0.6, 32);
+            const ammeterMat = new THREE.MeshStandardMaterial({ color: 0x22C55E, side: THREE.DoubleSide });
+            ammeter = new THREE.Mesh(ammeterGeo, ammeterMat);
+            ammeter.position.set(0, 2.1, 0.1);
+            scene.add(ammeter);
+            
+            // 电子粒子
+            createElectrons();
+            
+            // 标签
+            createLabel('+', -4, 0.8, 0, '#FBBF24');
+            createLabel('-', -4, -0.8, 0, '#94A3B8');
+            createLabel('A', 0, 2.1, 0.2, '#22C55E');
+            createLabel('R', 4, 0.8, 0, '#22D3EE');
+            
+            animate();
+            renderKaTeX();
+        }
+        
+        function createElectrons() {
+            const geometry = new THREE.BufferGeometry();
+            const positions = [];
+            const colors = [];
+            const particleCount = 200;
+            
+            for (let i = 0; i < particleCount; i++) {
+                const angle = (i / particleCount) * Math.PI * 2;
+                const radius = 0.3 + Math.random() * 0.2;
+                const x = -3 + Math.cos(angle + i * 0.1) * 1.5;
+                const y = Math.sin(angle) * radius;
+                const z = Math.random() * 0.2 - 0.1;
+                positions.push(x, y, z);
+                colors.push(0.2, 0.8, 1);
+            }
+            
+            geometry.setAttribute('position', new THREE.Float32BufferAttribute(positions, 3));
+            geometry.setAttribute('color', new THREE.Float32BufferAttribute(colors, 3));
+            
+            const material = new THREE.PointsMaterial({ size: 0.15, vertexColors: true, transparent: true, opacity: 0.8 });
+            electronParticles = new THREE.Points(geometry, material);
+            scene.add(electronParticles);
+        }
+        
+        function createLabel(text, x, y, z, color) {
+            const canvas = document.createElement('canvas');
+            canvas.width = 64;
+            canvas.height = 64;
+            const ctx = canvas.getContext('2d');
+            ctx.fillStyle = color;
+            ctx.font = 'bold 40px Inter, sans-serif';
+            ctx.textAlign = 'center';
+            ctx.textBaseline = 'middle';
+            ctx.fillText(text, 32, 32);
+            
+            const texture = new THREE.CanvasTexture(canvas);
+            const spriteMat = new THREE.SpriteMaterial({ map: texture, transparent: true });
+            const sprite = new THREE.Sprite(spriteMat);
+            sprite.position.set(x, y, z);
+            sprite.scale.set(0.8, 0.8, 1);
+            scene.add(sprite);
+        }
+        
+        function updateExperiment() {
+            const U = parseFloat(document.getElementById('voltage').value);
+            const R = parseFloat(document.getElementById('resistance').value);
+            const I = U / R;
+            
+            document.getElementById('voltage-val').textContent = U.toFixed(1) + 'V';
+            document.getElementById('resistance-val').textContent = R + 'Ω';
+            document.getElementById('current-val').textContent = I.toFixed(2) + 'A';
+            document.getElementById('current').value = I;
+            document.getElementById('calc-result').textContent = 'I = ' + U + '/' + R + ' = ' + I.toFixed(2) + 'A';
+            
+            // 更新电子速度
+            if (electronParticles) {
+                electronParticles.userData.speed = I;
+            }
+            
+            // 更新电阻大小
+            if (resistor) {
+                const scale = 0.5 + R / 50;
+                resistor.scale.set(1, scale, 1);
+            }
+        }
+        
+        function updateFromCurrent() {
+            const I = parseFloat(document.getElementById('current').value);
+            const R = parseFloat(document.getElementById('resistance').value);
+            const U = I * R;
+            
+            document.getElementById('current-val').textContent = I.toFixed(2) + 'A';
+            document.getElementById('voltage-val').textContent = U.toFixed(1) + 'V';
+            document.getElementById('voltage').value = U;
+            document.getElementById('calc-result').textContent = 'U = ' + I.toFixed(2) + ' × ' + R + ' = ' + U.toFixed(1) + 'V';
+        }
+        
+        function animate() {
+            requestAnimationFrame(animate);
+            
+            // 电子流动动画
+            if (electronParticles) {
+                const positions = electronParticles.geometry.attributes.position.array;
+                const speed = electronParticles.userData.speed || 0.5;
+                
+                for (let i = 0; i < positions.length; i += 3) {
+                    positions[i] += speed * 0.02;
+                    if (positions[i] > 3) positions[i] = -3;
+                }
+                electronParticles.geometry.attributes.position.needsUpdate = true;
+            }
+            
+            renderer.render(scene, camera);
+        }
+        
+        function renderKaTeX() {
+            document.querySelectorAll('.katex-render').forEach(el => {
+                if (!el.dataset.rendered) {
+                    katex.render(el.textContent, el, { throwOnError: false });
+                    el.dataset.rendered = 'true';
+                }
+            });
+        }
+        
+        function resetScene() {
+            document.getElementById('voltage').value = 6;
+            document.getElementById('resistance').value = 10;
+            updateExperiment();
+        }
+        
+        function toggleFullscreen() {
+            if (!document.fullscreenElement) {
+                document.documentElement.requestFullscreen();
+            } else {
+                document.exitFullscreen();
+            }
+        }
+        
+        function toggleQuiz() {
+            document.getElementById('quizPanel').classList.add('collapsed');
+            document.getElementById('quizFab').classList.add('show');
+        }
+        
+        function expandQuiz() {
+            document.getElementById('quizPanel').classList.remove('collapsed');
+            document.getElementById('quizFab').classList.remove('show');
+        }
+        
+        function checkAnswer(el, correct) {
+            document.querySelectorAll('.quiz-option').forEach(opt => opt.classList.remove('correct', 'wrong'));
+            if (correct) {
+                el.classList.add('correct');
+            } else {
+                el.classList.add('wrong');
+            }
+        }
+        
+        window.addEventListener('resize', () => {
+            camera.aspect = window.innerWidth / window.innerHeight;
+            camera.updateProjectionMatrix();
+            renderer.setSize(window.innerWidth, window.innerHeight);
+        });
+        
+        init();
+    </script>
+    <div style="position: fixed; bottom: 20px; left: 340px; color: var(--text-secondary); font-size: 12px; z-index: 100;">
+        由 AetherViz Master 为你生成 ❤️
+    </div>
+</body>
+</html>
