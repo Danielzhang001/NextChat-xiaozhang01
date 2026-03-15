@@ -222,8 +222,18 @@
         }
         @media (max-width: 900px) {
             .sidebar { display: none; }
-            #canvas-container { left: 0; top: 80px; }
+            #canvas-container { left: 0; right: 0; top: 80px; bottom: 300px; }
             .footer { left: 20px; }
+            .control-panel { 
+                left: 10px; right: 10px; bottom: 10px; 
+                width: auto; max-height: 280px;
+                padding: 16px;
+            }
+            .quiz-panel {
+                left: 10px; right: 10px; bottom: 300px;
+                width: auto; max-height: 260px;
+            }
+            .quiz-fab { display: none !important; }
         }
     </style>
 </head>
